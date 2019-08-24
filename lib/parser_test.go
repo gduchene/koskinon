@@ -17,41 +17,41 @@ limitations under the License.
 package lib
 
 import (
-	"reflect"
 	"strings"
+	"reflect"
 	"testing"
 )
 
-func TestLex(t *testing.T) {
+func TestParseListStr(t *testing.T) {
 	tests := []struct {
 		input  string
-		result []string
+		result ListStr
 	}{
 		// Valid inputs:
-		{"hello, world", []string{"hello", ",", "world"}},
-		{"`hello world`", []string{"hello world"}},
-		{`"hello world"`, []string{"hello world"}},
-		{"[`Hello`, world]", []string{"[", "Hello", ",", "world", "]"}},
+		{`["hello world"]`, ListStr{"hello world"}},
+		{`["hello", "world"]`, ListStr{"hello", "world"}},
+		{"[\"hello\", `world`]", ListStr{"hello", "world"}},
 
-		// Unsupported tokens in input:
-		{"42 nope", nil},
-		{"still nope 42.2", nil},
-		{"forever nope 'c'", nil},
+		// Invalid inputs:
+		{`"hello world"`, ListStr{}},
+		{`["hello",]`, ListStr{}},
+		{`[,"hello",]`, ListStr{}},
 	}
 	for i, test := range tests {
-		ts, err := lex("", strings.NewReader(test.input))
+		p, err := newParser("", strings.NewReader(test.input))
 		if err != nil {
-			if test.result != nil {
-				t.Errorf("#%d: lex() failed: %s", i, err)
+			t.Errorf("#%d: newParser() failed: %s", i, err)
+			continue
+		}
+		l, err := p.parseListStr()
+		if err != nil {
+			if len(test.result) != 0 {
+				t.Errorf("#%d: parseListStr() failed: %s", i, err)
 			}
 			continue
 		}
-		output := make([]string, len(ts))
-		for j := range ts {
-			output[j] = ts[j].val
-		}
-		if !reflect.DeepEqual(test.result, output) {
-			t.Errorf("#%d: expected %q, got %q", i, test.result, output)
+		if !reflect.DeepEqual(test.result, l) {
+			t.Errorf("#%d: expected %q, got %q", i, test.result, l)
 		}
 	}
 }
