@@ -20,3 +20,5 @@ package lib
 type ListStr []string
 
 type StmtMark struct{}
+
+type StmtSkip struct{}

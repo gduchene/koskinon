@@ -85,3 +85,33 @@ func TestParseStmtMark(t *testing.T) {
 		}
 	}
 }
+
+func TestParseStmtSkip(t *testing.T) {
+	tests := []struct {
+		input string
+		good  bool
+	}{
+		// Valid input:
+		{`skip inbox`, true},
+
+		// Invalid inputs:
+		{`"skip inbox"`, false},
+		{`skip`, false},
+	}
+	for i, test := range tests {
+		p, err := newParser("", strings.NewReader(test.input))
+		if err != nil {
+			t.Errorf("#%d: newParser() failed: %s", i, err)
+			continue
+		}
+		if _, err := p.parseStmtSkip(); err != nil {
+			if test.good {
+				t.Errorf("#%d: parseStmtSkip() failed: %s", i, err)
+			}
+			continue
+		}
+		if !test.good {
+			t.Errorf("#%d: parseStmtSkip() wrongly succeeded: %s", i, test.input)
+		}
+	}
+}

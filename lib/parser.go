@@ -110,6 +110,20 @@ error:
 	return
 }
 
+func (p *parser) parseStmtSkip() (stmt StmtSkip, err error) {
+	oi := p.i
+	if err = p.expectIdent("skip"); err != nil {
+		goto error
+	}
+	if err = p.expectIdent("inbox"); err != nil {
+		goto error
+	}
+	return
+error:
+	p.i = oi
+	return
+}
+
 func newParser(f string, r io.Reader) (*parser, error) {
 	ts, err := lex(f, r)
 	if err != nil {
