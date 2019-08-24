@@ -16,4 +16,4 @@ StmtLabel    = "label" ( Str | ListStr ) .
 StmtMark     = "mark" "as" "read" .
 StmtSkip     = "skip" "inbox" .
 StmtStop     = "stop" .
-Str          = /* https://golang.org/ref/spec#String_literals. */ .
+Str          = /* https://golang.org/ref/spec#String_literals */ .
