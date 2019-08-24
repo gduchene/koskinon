@@ -18,3 +18,5 @@ limitations under the License.
 package lib
 
 type ListStr []string
+
+type StmtMark struct{}

@@ -93,6 +93,23 @@ func (p *parser) parseListStr() (ListStr, error) {
 	}
 }
 
+func (p *parser) parseStmtMark() (stmt StmtMark, err error) {
+	oi := p.i
+	if err = p.expectIdent("mark"); err != nil {
+		goto error
+	}
+	if err = p.expectIdent("as"); err != nil {
+		goto error
+	}
+	if err = p.expectIdent("read"); err != nil {
+		goto error
+	}
+	return
+error:
+	p.i = oi
+	return
+}
+
 func newParser(f string, r io.Reader) (*parser, error) {
 	ts, err := lex(f, r)
 	if err != nil {

@@ -17,8 +17,8 @@ limitations under the License.
 package lib
 
 import (
-	"strings"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -52,6 +52,36 @@ func TestParseListStr(t *testing.T) {
 		}
 		if !reflect.DeepEqual(test.result, l) {
 			t.Errorf("#%d: expected %q, got %q", i, test.result, l)
+		}
+	}
+}
+
+func TestParseStmtMark(t *testing.T) {
+	tests := []struct {
+		input string
+		good  bool
+	}{
+		// Valid input:
+		{`mark as read`, true},
+
+		// Invalid inputs:
+		{`"mark as read"`, false},
+		{`mark`, false},
+	}
+	for i, test := range tests {
+		p, err := newParser("", strings.NewReader(test.input))
+		if err != nil {
+			t.Errorf("#%d: newParser() failed: %s", i, err)
+			continue
+		}
+		if _, err := p.parseStmtMark(); err != nil {
+			if test.good {
+				t.Errorf("#%d: parseStmtMark() failed: %s", i, err)
+			}
+			continue
+		}
+		if !test.good {
+			t.Errorf("#%d: parseStmtMark() wrongly succeeded: %s", i, test.input)
 		}
 	}
 }
