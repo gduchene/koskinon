@@ -56,6 +56,40 @@ func TestParseListStr(t *testing.T) {
 	}
 }
 
+func TestParseStmtLabel(t *testing.T) {
+	tests := []struct {
+		input  string
+		result StmtLabel
+	}{
+		// Valid inputs:
+		{`label "foo"`, StmtLabel{ListStr{"foo"}}},
+		{`label ["foo"]`, StmtLabel{ListStr{"foo"}}},
+		{`label ["foo", "bar"]`, StmtLabel{ListStr{"foo", "bar"}}},
+
+		// Invalid inputs:
+		{`label`, StmtLabel{}},
+		{`label []`, StmtLabel{}},
+		{`"label"`, StmtLabel{}},
+	}
+	for i, test := range tests {
+		p, err := newParser("", strings.NewReader(test.input))
+		if err != nil {
+			t.Errorf("#%d: newParser() failed: %s", i, err)
+			continue
+		}
+		stmt, err := p.parseStmtLabel()
+		if err != nil {
+			if len(test.result.Labels) != 0 {
+				t.Errorf("#%d: parseStmtLabel() failed: %s", i, err)
+			}
+			continue
+		}
+		if !reflect.DeepEqual(test.result, stmt) {
+			t.Errorf("#%d: expected %q, got %q", i, test.result, stmt)
+		}
+	}
+}
+
 func TestParseStmtMark(t *testing.T) {
 	tests := []struct {
 		input string

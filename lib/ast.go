@@ -19,6 +19,10 @@ package lib
 
 type ListStr []string
 
+type StmtLabel struct {
+	Labels []string
+}
+
 type StmtMark struct{}
 
 type StmtSkip struct{}
