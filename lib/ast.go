@@ -22,3 +22,5 @@ type ListStr []string
 type StmtMark struct{}
 
 type StmtSkip struct{}
+
+type StmtStop struct{}

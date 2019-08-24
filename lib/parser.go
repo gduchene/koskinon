@@ -124,6 +124,15 @@ error:
 	return
 }
 
+func (p *parser) parseStmtStop() (stmt StmtStop, err error) {
+	oi := p.i
+	if err = p.expectIdent("stop"); err != nil {
+		p.i = oi
+		return
+	}
+	return
+}
+
 func newParser(f string, r io.Reader) (*parser, error) {
 	ts, err := lex(f, r)
 	if err != nil {

@@ -115,3 +115,32 @@ func TestParseStmtSkip(t *testing.T) {
 		}
 	}
 }
+
+func TestParseStmtStop(t *testing.T) {
+	tests := []struct {
+		input string
+		good  bool
+	}{
+		// Valid input:
+		{`stop`, true},
+
+		// Invalid input:
+		{`"stop"`, false},
+	}
+	for i, test := range tests {
+		p, err := newParser("", strings.NewReader(test.input))
+		if err != nil {
+			t.Errorf("#%d: newParser() failed: %s", i, err)
+			continue
+		}
+		if _, err := p.parseStmtStop(); err != nil {
+			if test.good {
+				t.Errorf("#%d: parseStmtStop() failed: %s", i, err)
+			}
+			continue
+		}
+		if !test.good {
+			t.Errorf("#%d: parseStmtStop() wrongly succeeded: %s", i, test.input)
+		}
+	}
+}
