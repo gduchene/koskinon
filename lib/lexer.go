@@ -22,39 +22,49 @@ import (
 	"text/scanner"
 )
 
-type token struct {
-	kind int
-	pos  scanner.Position
-	val  string
-}
+type kind int
 
 const (
-	kindUnknown = iota
+	kindUnknown kind = iota
 	kindIdent
 	kindOther
 	kindString
 )
+
+func (k kind) String() string {
+	return [...]string{"UNKNOWN", "IDENT", "OTHER", "STRING"}[k]
+}
+
+type token struct {
+	k   kind
+	pos scanner.Position
+	val string
+}
+
+func (t token) String() string {
+	return fmt.Sprintf("%s(%s)", t.k, t.val)
+}
 
 func lex(f string, r io.Reader) (ts []token, err error) {
 	s := scanner.Scanner{}
 	s.Init(r)
 	s.Filename = f
 	for t := s.Scan(); t != scanner.EOF; t = s.Scan() {
-		kind := kindUnknown
-		val := s.TokenText()
+		k := kindUnknown
+		v := s.TokenText()
 		switch t {
 		case scanner.Char, scanner.Int, scanner.Float:
 			err = fmt.Errorf("%s: unexpected ``%s''", s.Position, s.TokenText())
 			return
 		case scanner.Ident:
-			kind = kindIdent
+			k = kindIdent
 		case scanner.RawString, scanner.String:
-			kind = kindString
-			val = val[1 : len(val)-1]
+			k = kindString
+			v = v[1 : len(v)-1]
 		default:
-			kind = kindOther
+			k = kindOther
 		}
-		ts = append(ts, token{kind, s.Position, val})
+		ts = append(ts, token{k, s.Position, v})
 	}
 	return
 }
