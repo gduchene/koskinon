@@ -119,21 +119,10 @@ func (p *parser) parseListStr() (ListStr, error) {
 }
 
 func (p *parser) parseStmtLabel() (stmt StmtLabel, err error) {
-	oi := p.i
-	var s string
 	if err = p.expectIdent("label"); err != nil {
-		goto error
-	}
-	if s, err = p.nextStr(); err == nil {
-		stmt.Labels = append(stmt.Labels, s)
 		return
 	}
-	if stmt.Labels, err = p.parseListStr(); err != nil {
-		goto error
-	}
-	return
-error:
-	p.i = oi
+	stmt.Labels, err = p.parseStrOrListStr()
 	return
 }
 
