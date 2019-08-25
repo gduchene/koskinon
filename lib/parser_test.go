@@ -22,7 +22,7 @@ import (
 	"testing"
 )
 
-func TestParseListStr(t *testing.T) {
+func TestParser_parseListStr(t *testing.T) {
 	tests := []struct {
 		input  string
 		result ListStr
@@ -56,7 +56,7 @@ func TestParseListStr(t *testing.T) {
 	}
 }
 
-func TestParseStmtLabel(t *testing.T) {
+func TestParser_parseStmtLabel(t *testing.T) {
 	tests := []struct {
 		input  string
 		result StmtLabel
@@ -90,7 +90,7 @@ func TestParseStmtLabel(t *testing.T) {
 	}
 }
 
-func TestParseStmtMark(t *testing.T) {
+func TestParser_parseStmtMark(t *testing.T) {
 	tests := []struct {
 		input string
 		good  bool
@@ -120,7 +120,7 @@ func TestParseStmtMark(t *testing.T) {
 	}
 }
 
-func TestParseStmtSkip(t *testing.T) {
+func TestParser_parseStmtSkip(t *testing.T) {
 	tests := []struct {
 		input string
 		good  bool
@@ -150,7 +150,7 @@ func TestParseStmtSkip(t *testing.T) {
 	}
 }
 
-func TestParseStmtStop(t *testing.T) {
+func TestParser_parseStmtStop(t *testing.T) {
 	tests := []struct {
 		input string
 		good  bool
