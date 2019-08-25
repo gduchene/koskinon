@@ -62,6 +62,45 @@ func TestParser_parseExprHeader(t *testing.T) {
 	}
 }
 
+func TestParser_parseExprMessage(t *testing.T) {
+	tests := []struct {
+		input  string
+		result ExprMessage
+	}{
+		{
+			`message contains "foo"`,
+			ExprMessage{OpCmpContain{[]string{"foo"}}},
+		},
+		{
+			`message contains ["foo", "bar"]`,
+			ExprMessage{OpCmpContain{[]string{"foo", "bar"}}},
+		},
+		{
+			`message matches "fo+"`,
+			ExprMessage{OpCmpMatch{[]*r.Regexp{r.MustCompile("fo+")}}},
+		},
+		{
+			`message is "foo"`,
+			ExprMessage{OpCmpEqual{[]string{"foo"}}},
+		},
+	}
+	for i, test := range tests {
+		p, err := newParser("", strings.NewReader(test.input))
+		if err != nil {
+			t.Errorf("#%d: newParser() failed: %s", i, err)
+			continue
+		}
+		expr, err := p.parseExprMessage()
+		if err != nil {
+			t.Errorf("#%d: parseExprMessage() failed: %s", i, err)
+			continue
+		}
+		if !reflect.DeepEqual(test.result, expr) {
+			t.Errorf("#%d: expected %#v, got %#v", i, test.result, expr)
+		}
+	}
+}
+
 func TestParser_parseListStr(t *testing.T) {
 	tests := []struct {
 		input  string

@@ -29,6 +29,10 @@ type ExprHeader struct {
 	Op      OpCmp
 }
 
+type ExprMessage struct {
+	Op OpCmp
+}
+
 type OpCmp interface {
 	Eval([]string) bool
 }

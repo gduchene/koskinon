@@ -88,6 +88,25 @@ func (p *parser) parseExprHeader() (expr ExprHeader, err error) {
 	return
 }
 
+func (p *parser) parseExprMessage() (expr ExprMessage, err error) {
+	oi := p.i
+	if err = p.expectIdent("message"); err != nil {
+		return
+	}
+	var op string
+	if op, err = p.nextIdent(); err != nil {
+		p.i = oi
+		return
+	}
+	var vals []string
+	if vals, err = p.parseStrOrListStr(); err != nil {
+		p.i = oi
+		return
+	}
+	expr.Op, err = newOpCmp(op, vals)
+	return
+}
+
 func (p *parser) parseListStr() (ListStr, error) {
 	oi := p.i
 	if err := p.expectOther("["); err != nil {
