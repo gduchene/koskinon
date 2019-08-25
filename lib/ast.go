@@ -24,6 +24,11 @@ import (
 
 type ListStr []string
 
+type ExprHeader struct {
+	Headers []string
+	Op      OpCmp
+}
+
 type OpCmp interface {
 	Eval([]string) bool
 }

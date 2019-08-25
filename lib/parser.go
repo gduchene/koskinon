@@ -19,6 +19,7 @@ package lib
 import (
 	"fmt"
 	"io"
+	"regexp"
 )
 
 type parser struct {
@@ -61,6 +62,30 @@ func (p *parser) nextOther() (string, error) {
 
 func (p *parser) nextStr() (string, error) {
 	return p.expect(kindString, "")
+}
+
+func (p *parser) parseExprHeader() (expr ExprHeader, err error) {
+	oi := p.i
+	if err = p.expectIdent("header"); err != nil {
+		if err = p.expectIdent("headers"); err != nil {
+			return
+		}
+	}
+	if expr.Headers, err = p.parseStrOrListStr(); err != nil {
+		return
+	}
+	var op string
+	if op, err = p.nextIdent(); err != nil {
+		p.i = oi
+		return
+	}
+	var vals []string
+	if vals, err = p.parseStrOrListStr(); err != nil {
+		p.i = oi
+		return
+	}
+	expr.Op, err = newOpCmp(op, vals)
+	return
 }
 
 func (p *parser) parseListStr() (ListStr, error) {
@@ -150,6 +175,34 @@ func (p *parser) parseStmtStop() (stmt StmtStop, err error) {
 		return
 	}
 	return
+}
+
+func (p *parser) parseStrOrListStr() ([]string, error) {
+	if s, err := p.nextStr(); err == nil {
+		return []string{s}, nil
+	}
+	return p.parseListStr()
+}
+
+func newOpCmp(op string, vals []string) (OpCmp, error) {
+	switch op {
+	case "are", "is":
+		return OpCmpEqual{vals}, nil
+	case "contain", "contains":
+		return OpCmpContain{vals}, nil
+	case "match", "matches":
+		rs := make([]*regexp.Regexp, len(vals))
+		for i := range vals {
+			r, err := regexp.Compile(vals[i])
+			if err != nil {
+				return nil, err
+			}
+			rs[i] = r
+		}
+		return OpCmpMatch{rs}, nil
+	default:
+		return nil, fmt.Errorf("unknown binary operator ``%s''", op)
+	}
 }
 
 func newParser(f string, r io.Reader) (*parser, error) {

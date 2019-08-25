@@ -18,9 +18,49 @@ package lib
 
 import (
 	"reflect"
+	r "regexp"
 	"strings"
 	"testing"
 )
+
+func TestParser_parseExprHeader(t *testing.T) {
+	tests := []struct {
+		input  string
+		result ExprHeader
+	}{
+		{
+			`header "From" contains "foo"`,
+			ExprHeader{[]string{"From"}, OpCmpContain{[]string{"foo"}}},
+		},
+		{
+			`header "From" contains ["foo", "bar"]`,
+			ExprHeader{[]string{"From"}, OpCmpContain{[]string{"foo", "bar"}}},
+		},
+		{
+			`headers ["From", "To"] contain "foo"`,
+			ExprHeader{[]string{"From", "To"}, OpCmpContain{[]string{"foo"}}},
+		},
+		{
+			`headers ["From", "To"] contain ["foo", "bar"]`,
+			ExprHeader{[]string{"From", "To"}, OpCmpContain{[]string{"foo", "bar"}}},
+		},
+	}
+	for i, test := range tests {
+		p, err := newParser("", strings.NewReader(test.input))
+		if err != nil {
+			t.Errorf("#%d: newParser() failed: %s", i, err)
+			continue
+		}
+		expr, err := p.parseExprHeader()
+		if err != nil {
+			t.Errorf("#%d: parseExprHeader() failed: %s", i, err)
+			continue
+		}
+		if !reflect.DeepEqual(test.result, expr) {
+			t.Errorf("#%d: expected %#v, got %#v", i, test.result, expr)
+		}
+	}
+}
 
 func TestParser_parseListStr(t *testing.T) {
 	tests := []struct {
@@ -175,6 +215,39 @@ func TestParser_parseStmtStop(t *testing.T) {
 		}
 		if !test.good {
 			t.Errorf("#%d: parseStmtStop() wrongly succeeded: %s", i, test.input)
+		}
+	}
+}
+
+func TestNewOpCmp(t *testing.T) {
+	tests := []struct {
+		op     string
+		vals   []string
+		result OpCmp
+	}{
+		// Valid inputs:
+		{"is", []string{"foo", "bar"}, OpCmpEqual{[]string{"foo", "bar"}}},
+		{"are", []string{"foo", "bar"}, OpCmpEqual{[]string{"foo", "bar"}}},
+		{"contains", []string{"foo", "bar"}, OpCmpContain{[]string{"foo", "bar"}}},
+		{"contain", []string{"foo", "bar"}, OpCmpContain{[]string{"foo", "bar"}}},
+		{"matches", []string{"f."}, OpCmpMatch{[]*r.Regexp{r.MustCompile("f.")}}},
+		{"match", []string{"f."}, OpCmpMatch{[]*r.Regexp{r.MustCompile("f.")}}},
+
+		// Invalid inputs:
+		{"matches", []string{"?"}, nil},
+		{"matches", []string{"f(?:"}, nil},
+		{"match", []string{"f**"}, nil},
+	}
+	for i, test := range tests {
+		op, err := newOpCmp(test.op, test.vals)
+		if err != nil {
+			if test.result != nil {
+				t.Errorf("#%d: newOpCmp() failed: %s", i, err)
+			}
+			continue
+		}
+		if !reflect.DeepEqual(test.result, op) {
+			t.Errorf("#%d: expected %#v, got %#v", i, test.result, op)
 		}
 	}
 }
