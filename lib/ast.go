@@ -24,13 +24,37 @@ import (
 
 type ListStr []string
 
+type Expr interface {
+	Eval(Message) bool
+}
+
 type ExprHeader struct {
 	Headers []string
 	Op      OpCmp
 }
 
+func (e ExprHeader) Eval(m Message) bool {
+	vals := []string{}
+	headers := m.Headers()
+	for _, header := range e.Headers {
+		if val, ok := headers[header]; ok {
+			vals = append(vals, val)
+		}
+	}
+	return e.Op.Eval(vals)
+}
+
 type ExprMessage struct {
 	Op OpCmp
+}
+
+func (e ExprMessage) Eval(m Message) bool {
+	return e.Op.Eval([]string{m.Body()})
+}
+
+type Message interface {
+	Body() string
+	Headers() map[string]string
 }
 
 type OpCmp interface {
