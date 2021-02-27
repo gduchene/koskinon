@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: © 2019 The koskinon Authors
+// SPDX-License-Identifier: Apache-2.0
+
 Expr         = ExprUnary | ExprBinary | PredBool .
 ExprBinary   = Expr OpBinary Expr .
 ExprHeader   = ( "header" | "headers" ) ( Str | ListStr ) OpCmp ( Str | ListStr ) .
