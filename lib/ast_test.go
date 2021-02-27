@@ -18,8 +18,12 @@ package lib
 
 import (
 	"regexp"
+	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 type mockMessage struct {
@@ -51,9 +55,9 @@ func (m mockMessage) Headers() map[string]string {
 }
 
 func TestExprHeader_Eval(t *testing.T) {
-	tests := []struct {
+	for i, test := range []struct {
 		input string
-		good  bool
+		want  bool
 	}{
 		// Matching inputs:
 		{`header "To" contains "example.net"`, true},
@@ -65,29 +69,21 @@ func TestExprHeader_Eval(t *testing.T) {
 		{`header "From" is "koskinon@example.net"`, false},
 		{`header "From" matches "^example.net"`, false},
 		{`header ["To", "From"] contains "example.org"`, false},
-	}
-	for i, test := range tests {
-		p, err := newParser("", strings.NewReader(test.input))
-		if err != nil {
-			t.Errorf("#%d: newParser() failed: %s", i, err)
-			continue
-		}
-		expr, err := p.parseExprHeader()
-		if err != nil {
-			t.Errorf("#%d: parseExprHeader() failed: %s", i, err)
-			continue
-		}
-		ok := expr.Eval(testMessage)
-		if ok != test.good {
-			t.Errorf("#%d: expected %t, got %t", i, test.good, ok)
-		}
+	} {
+		t.Run(strconv.Itoa(i), func(t *testing.T) {
+			p, err := newParser("", strings.NewReader(test.input))
+			require.NoError(t, err)
+			expr, err := p.parseExprHeader()
+			require.NoError(t, err)
+			assert.Equal(t, test.want, expr.Eval(testMessage))
+		})
 	}
 }
 
 func TestExprMessage_Eval(t *testing.T) {
-	tests := []struct {
+	for i, test := range []struct {
 		input string
-		good  bool
+		want  bool
 	}{
 		// Matching inputs:
 		{`message matches "(?m)^-- koskinon"`, true},
@@ -97,29 +93,21 @@ func TestExprMessage_Eval(t *testing.T) {
 		{`message is "koskinon"`, false},
 		{`message matches ".*beep boop.*"`, false},
 		{`message contains "example.org"`, false},
-	}
-	for i, test := range tests {
-		p, err := newParser("", strings.NewReader(test.input))
-		if err != nil {
-			t.Errorf("#%d: newParser() failed: %s", i, err)
-			continue
-		}
-		expr, err := p.parseExprMessage()
-		if err != nil {
-			t.Errorf("#%d: parseExprMessage() failed: %s", i, err)
-			continue
-		}
-		ok := expr.Eval(testMessage)
-		if ok != test.good {
-			t.Errorf("#%d: expected %t, got %t", i, test.good, ok)
-		}
+	} {
+		t.Run(strconv.Itoa(i), func(t *testing.T) {
+			p, err := newParser("", strings.NewReader(test.input))
+			require.NoError(t, err)
+			expr, err := p.parseExprMessage()
+			require.NoError(t, err)
+			assert.Equal(t, test.want, expr.Eval(testMessage))
+		})
 	}
 }
 
 func TestOpCmpContain_Eval(t *testing.T) {
-	tests := []struct {
+	for i, test := range []struct {
 		inputs, vals []string
-		good         bool
+		want         bool
 	}{
 		// Valid inputs:
 		{[]string{"Hello world"}, []string{"world"}, true},
@@ -128,25 +116,17 @@ func TestOpCmpContain_Eval(t *testing.T) {
 		// Invalid inputs:
 		{[]string{"Hello world"}, []string{"Goodbye"}, false},
 		{[]string{"Hello", "world"}, []string{"Hello world"}, false},
-	}
-	for i, test := range tests {
-		ok := OpCmpContain{test.vals}.Eval(test.inputs)
-		if !ok {
-			if test.good {
-				t.Errorf("#%d: Eval() failed: %q", i, test.inputs)
-			}
-			continue
-		}
-		if !test.good {
-			t.Errorf("#%d: Eval() wrongly succeeded: %q", i, test.inputs)
-		}
+	} {
+		t.Run(strconv.Itoa(i), func(t *testing.T) {
+			assert.Equal(t, test.want, OpCmpContain{test.vals}.Eval(test.inputs))
+		})
 	}
 }
 
 func TestOpCmpEqual_Eval(t *testing.T) {
-	tests := []struct {
+	for i, test := range []struct {
 		inputs, vals []string
-		good         bool
+		want         bool
 	}{
 		// Valid inputs:
 		{[]string{"Hello world"}, []string{"Hello world"}, true},
@@ -155,25 +135,17 @@ func TestOpCmpEqual_Eval(t *testing.T) {
 		// Invalid inputs:
 		{[]string{"Hello world"}, []string{"Goodbye world"}, false},
 		{[]string{"Hello", "world"}, []string{"universe"}, false},
-	}
-	for i, test := range tests {
-		ok := OpCmpEqual{test.vals}.Eval(test.inputs)
-		if !ok {
-			if test.good {
-				t.Errorf("#%d: Eval() failed: %q", i, test.inputs)
-			}
-			continue
-		}
-		if !test.good {
-			t.Errorf("#%d: Eval() wrongly succeeded: %q", i, test.inputs)
-		}
+	} {
+		t.Run(strconv.Itoa(i), func(t *testing.T) {
+			assert.Equal(t, test.want, OpCmpEqual{test.vals}.Eval(test.inputs))
+		})
 	}
 }
 
 func TestOpCmpMatch_Eval(t *testing.T) {
-	tests := []struct {
+	for i, test := range []struct {
 		inputs, vals []string
-		good         bool
+		want         bool
 	}{
 		// Valid inputs:
 		{[]string{"Hello world"}, []string{"w.*d"}, true},
@@ -182,21 +154,13 @@ func TestOpCmpMatch_Eval(t *testing.T) {
 		// Invalid inputs:
 		{[]string{"Hello world"}, []string{"Go*dbye"}, false},
 		{[]string{"Hello", "world"}, []string{"Hello  +world"}, false},
-	}
-	for i, test := range tests {
-		rs := make([]*regexp.Regexp, len(test.vals))
-		for j := range test.vals {
-			rs[j] = regexp.MustCompile(test.vals[j])
-		}
-		ok := OpCmpMatch{rs}.Eval(test.inputs)
-		if !ok {
-			if test.good {
-				t.Errorf("#%d: Eval() failed: %q", i, test.inputs)
+	} {
+		t.Run(strconv.Itoa(i), func(t *testing.T) {
+			rs := make([]*regexp.Regexp, len(test.vals))
+			for j := range test.vals {
+				rs[j] = regexp.MustCompile(test.vals[j])
 			}
-			continue
-		}
-		if !test.good {
-			t.Errorf("#%d: Eval() wrongly succeeded: %q", i, test.inputs)
-		}
+			assert.Equal(t, test.want, OpCmpMatch{rs}.Eval(test.inputs))
+		})
 	}
 }

@@ -19,14 +19,18 @@ package lib
 import (
 	"reflect"
 	r "regexp"
+	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestParser_parseExprHeader(t *testing.T) {
-	tests := []struct {
-		input  string
-		result ExprHeader
+	for i, test := range []struct {
+		input string
+		want  ExprHeader
 	}{
 		{
 			`header "From" contains "foo"`,
@@ -44,28 +48,21 @@ func TestParser_parseExprHeader(t *testing.T) {
 			`headers ["From", "To"] contain ["foo", "bar"]`,
 			ExprHeader{[]string{"From", "To"}, OpCmpContain{[]string{"foo", "bar"}}},
 		},
-	}
-	for i, test := range tests {
-		p, err := newParser("", strings.NewReader(test.input))
-		if err != nil {
-			t.Errorf("#%d: newParser() failed: %s", i, err)
-			continue
-		}
-		expr, err := p.parseExprHeader()
-		if err != nil {
-			t.Errorf("#%d: parseExprHeader() failed: %s", i, err)
-			continue
-		}
-		if !reflect.DeepEqual(test.result, expr) {
-			t.Errorf("#%d: expected %#v, got %#v", i, test.result, expr)
-		}
+	} {
+		t.Run(strconv.Itoa(i), func(t *testing.T) {
+			p, err := newParser("", strings.NewReader(test.input))
+			require.NoError(t, err)
+			expr, err := p.parseExprHeader()
+			require.NoError(t, err)
+			assert.Equal(t, test.want, expr)
+		})
 	}
 }
 
 func TestParser_parseExprMessage(t *testing.T) {
-	tests := []struct {
-		input  string
-		result ExprMessage
+	for i, test := range []struct {
+		input string
+		want  ExprMessage
 	}{
 		{
 			`message contains "foo"`,
@@ -83,89 +80,72 @@ func TestParser_parseExprMessage(t *testing.T) {
 			`message is "foo"`,
 			ExprMessage{OpCmpEqual{[]string{"foo"}}},
 		},
-	}
-	for i, test := range tests {
-		p, err := newParser("", strings.NewReader(test.input))
-		if err != nil {
-			t.Errorf("#%d: newParser() failed: %s", i, err)
-			continue
-		}
-		expr, err := p.parseExprMessage()
-		if err != nil {
-			t.Errorf("#%d: parseExprMessage() failed: %s", i, err)
-			continue
-		}
-		if !reflect.DeepEqual(test.result, expr) {
-			t.Errorf("#%d: expected %#v, got %#v", i, test.result, expr)
-		}
+	} {
+		t.Run(strconv.Itoa(i), func(t *testing.T) {
+			p, err := newParser("", strings.NewReader(test.input))
+			require.NoError(t, err)
+			expr, err := p.parseExprMessage()
+			require.NoError(t, err)
+			assert.Equal(t, test.want, expr)
+		})
 	}
 }
 
 func TestParser_parseListStr(t *testing.T) {
-	tests := []struct {
-		input  string
-		result ListStr
+	for i, test := range []struct {
+		input   string
+		want    ListStr
+		wantErr bool
 	}{
 		// Valid inputs:
-		{`["hello world"]`, ListStr{"hello world"}},
-		{`["hello", "world"]`, ListStr{"hello", "world"}},
-		{"[\"hello\", `world`]", ListStr{"hello", "world"}},
+		{`["hello world"]`, ListStr{"hello world"}, false},
+		{`["hello", "world"]`, ListStr{"hello", "world"}, false},
+		{"[\"hello\", `world`]", ListStr{"hello", "world"}, false},
 
 		// Invalid inputs:
-		{`"hello world"`, ListStr{}},
-		{`["hello",]`, ListStr{}},
-		{`[,"hello",]`, ListStr{}},
-	}
-	for i, test := range tests {
-		p, err := newParser("", strings.NewReader(test.input))
-		if err != nil {
-			t.Errorf("#%d: newParser() failed: %s", i, err)
-			continue
-		}
-		l, err := p.parseListStr()
-		if err != nil {
-			if len(test.result) != 0 {
-				t.Errorf("#%d: parseListStr() failed: %s", i, err)
+		{`"hello world"`, ListStr{}, true},
+		{`["hello",]`, ListStr{}, true},
+		{`[,"hello",]`, ListStr{}, true},
+	} {
+		t.Run(strconv.Itoa(i), func(t *testing.T) {
+			p, err := newParser("", strings.NewReader(test.input))
+			require.NoError(t, err)
+			l, err := p.parseListStr()
+			if test.wantErr {
+				assert.Error(t, err)
+				return
 			}
-			continue
-		}
-		if !reflect.DeepEqual(test.result, l) {
-			t.Errorf("#%d: expected %q, got %q", i, test.result, l)
-		}
+			require.NoError(t, err)
+			assert.Equal(t, test.want, l)
+		})
 	}
 }
 
 func TestParser_parseStmtLabel(t *testing.T) {
-	tests := []struct {
-		input  string
-		result StmtLabel
+	for _, test := range []struct {
+		input   string
+		want    StmtLabel
+		wantErr bool
 	}{
 		// Valid inputs:
-		{`label "foo"`, StmtLabel{ListStr{"foo"}}},
-		{`label ["foo"]`, StmtLabel{ListStr{"foo"}}},
-		{`label ["foo", "bar"]`, StmtLabel{ListStr{"foo", "bar"}}},
+		{`label "foo"`, StmtLabel{ListStr{"foo"}}, false},
+		{`label ["foo"]`, StmtLabel{ListStr{"foo"}}, false},
+		{`label ["foo", "bar"]`, StmtLabel{ListStr{"foo", "bar"}}, false},
 
 		// Invalid inputs:
-		{`label`, StmtLabel{}},
-		{`label []`, StmtLabel{}},
-		{`"label"`, StmtLabel{}},
-	}
-	for i, test := range tests {
+		{`label`, StmtLabel{}, true},
+		{`label []`, StmtLabel{}, true},
+		{`"label"`, StmtLabel{}, true},
+	} {
 		p, err := newParser("", strings.NewReader(test.input))
-		if err != nil {
-			t.Errorf("#%d: newParser() failed: %s", i, err)
-			continue
-		}
+		require.NoError(t, err)
 		stmt, err := p.parseStmtLabel()
-		if err != nil {
-			if len(test.result.Labels) != 0 {
-				t.Errorf("#%d: parseStmtLabel() failed: %s", i, err)
-			}
+		if test.wantErr {
+			assert.Error(t, err)
 			continue
 		}
-		if !reflect.DeepEqual(test.result, stmt) {
-			t.Errorf("#%d: expected %q, got %q", i, test.result, stmt)
-		}
+		require.NoError(t, err)
+		assert.Equal(t, test.want, stmt)
 	}
 }
 
@@ -200,61 +180,52 @@ func TestParser_parseStmtMark(t *testing.T) {
 }
 
 func TestParser_parseStmtSkip(t *testing.T) {
-	tests := []struct {
-		input string
-		good  bool
+	for i, test := range []struct {
+		input   string
+		want    StmtSkip
+		wantErr bool
 	}{
 		// Valid input:
-		{`skip inbox`, true},
+		{`skip inbox`, StmtSkip{}, false},
 
 		// Invalid inputs:
-		{`"skip inbox"`, false},
-		{`skip`, false},
-	}
-	for i, test := range tests {
-		p, err := newParser("", strings.NewReader(test.input))
-		if err != nil {
-			t.Errorf("#%d: newParser() failed: %s", i, err)
-			continue
-		}
-		if _, err := p.parseStmtSkip(); err != nil {
-			if test.good {
-				t.Errorf("#%d: parseStmtSkip() failed: %s", i, err)
+		{`"skip inbox"`, StmtSkip{}, true},
+		{`skip`, StmtSkip{}, true},
+	} {
+		t.Run(strconv.Itoa(i), func(t *testing.T) {
+			p, err := newParser("", strings.NewReader(test.input))
+			require.NoError(t, err)
+			stmt, err := p.parseStmtSkip()
+			if test.wantErr {
+				assert.Error(t, err)
+				return
 			}
-			continue
-		}
-		if !test.good {
-			t.Errorf("#%d: parseStmtSkip() wrongly succeeded: %s", i, test.input)
-		}
+			require.NoError(t, err)
+			assert.Equal(t, test.want, stmt)
+		})
 	}
 }
 
 func TestParser_parseStmtStop(t *testing.T) {
-	tests := []struct {
-		input string
-		good  bool
+	for i, test := range []struct {
+		input   string
+		want    StmtStop
+		wantErr bool
 	}{
-		// Valid input:
-		{`stop`, true},
-
-		// Invalid input:
-		{`"stop"`, false},
-	}
-	for i, test := range tests {
-		p, err := newParser("", strings.NewReader(test.input))
-		if err != nil {
-			t.Errorf("#%d: newParser() failed: %s", i, err)
-			continue
-		}
-		if _, err := p.parseStmtStop(); err != nil {
-			if test.good {
-				t.Errorf("#%d: parseStmtStop() failed: %s", i, err)
+		{"stop", StmtStop{}, false},
+		{`"stop"`, StmtStop{}, true},
+	} {
+		t.Run(strconv.Itoa(i), func(t *testing.T) {
+			p, err := newParser("", strings.NewReader(test.input))
+			require.NoError(t, err)
+			stmt, err := p.parseStmtStop()
+			if test.wantErr {
+				assert.Error(t, err)
+				return
 			}
-			continue
-		}
-		if !test.good {
-			t.Errorf("#%d: parseStmtStop() wrongly succeeded: %s", i, test.input)
-		}
+			require.NoError(t, err)
+			assert.Equal(t, test.want, stmt)
+		})
 	}
 }
 
