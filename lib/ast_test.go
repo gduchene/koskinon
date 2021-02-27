@@ -164,3 +164,17 @@ func TestOpCmpMatch_Eval(t *testing.T) {
 		})
 	}
 }
+
+func TestPredBool_Eval(t *testing.T) {
+	for i, test := range []struct {
+		input PredBool
+		want  bool
+	}{
+		{PredBool(true), true},
+		{PredBool(false), false},
+	} {
+		t.Run(strconv.Itoa(i), func(t *testing.T) {
+			assert.Equal(t, test.want, test.input.Eval(testMessage))
+		})
+	}
+}

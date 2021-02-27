@@ -1,4 +1,4 @@
-Expr         = ExprUnary | ExprBinary .
+Expr         = ExprUnary | ExprBinary | PredBool .
 ExprBinary   = Expr OpBinary Expr .
 ExprHeader   = ( "header" | "headers" ) ( Str | ListStr ) OpCmp ( Str | ListStr ) .
 ExprMessage  = "message" OpCmp ( Str | ListStr ) .
@@ -9,6 +9,7 @@ OpCmp        = OpCmpContain | OpCmpEqual | OpCmpMatch .
 OpCmpContain = "contain" | "contains" .
 OpCmpEqual   = "are" | "is" .
 OpCmpMatch   = "match" | "matches" .
+PredBool     = "true" | "false" .
 Stmt         = StmtLabel | StmtIf | StmtMark | StmtSkip .
 StmtBlock    = "{" { Stmt } [ StmtStop ] "}" .
 StmtIf       = "if" Expr StmtBlock [ "else" ( StmtIf | StmtBlock ) ] .

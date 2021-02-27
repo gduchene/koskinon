@@ -91,6 +91,24 @@ func TestParser_parseExprMessage(t *testing.T) {
 	}
 }
 
+func TestParser_parsePredBool(t *testing.T) {
+	for i, test := range []struct {
+		input string
+		want  PredBool
+	}{
+		{"true", PredBool(true)},
+		{"false", PredBool(false)},
+	} {
+		t.Run(strconv.Itoa(i), func(t *testing.T) {
+			p, err := newParser("", strings.NewReader(test.input))
+			require.NoError(t, err)
+			pred, err := p.parsePredBool()
+			require.NoError(t, err)
+			assert.Equal(t, test.want, pred)
+		})
+	}
+}
+
 func TestParser_parseListStr(t *testing.T) {
 	for i, test := range []struct {
 		input   string

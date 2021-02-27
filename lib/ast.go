@@ -106,6 +106,12 @@ func (o OpCmpMatch) Eval(l []string) bool {
 	return false
 }
 
+type PredBool bool
+
+func (p PredBool) Eval(Message) bool {
+	return bool(p)
+}
+
 type StmtLabel struct {
 	Labels []string
 }

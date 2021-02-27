@@ -137,6 +137,16 @@ func (p *parser) parseListStr() (ListStr, error) {
 	}
 }
 
+func (p *parser) parsePredBool() (pred PredBool, err error) {
+	if err = p.expectIdent("true"); err == nil {
+		return PredBool(true), nil
+	}
+	if err = p.expectIdent("false"); err == nil {
+		return PredBool(false), nil
+	}
+	return PredBool(false), err
+}
+
 func (p *parser) parseStmtLabel() (stmt StmtLabel, err error) {
 	if err = p.expectIdent("label"); err != nil {
 		return
